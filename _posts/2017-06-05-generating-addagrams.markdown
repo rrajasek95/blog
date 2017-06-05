@@ -49,7 +49,14 @@ We can come up with a brute force approach quite simply as follows:
 3. Check if the candidate words are present in the dictionary
 4. If the candidate word is valid, go to step 2 and repeat the process until you get a long enough sequence
 
-If we look carefully at what's happenening, letters must be added at various positions along the word. This forces us to test a huge number of words for e.g. to generate candidate 7 letter solutions, we need to test at worst case $$ 26^7\times7! = 4.048032329\times10^{13} $$ words. This is computationally prohibitive, therefore we need to come up with a better approach.
+If we look carefully at what's happenening, letters must be added at various positions along the word. When we're building a 7 word sequence, we need to:
+- Single Letter: Add letters at 2 positions (before and after the letter) and then check the dictionary = $$ 26 \times 2 \times cost_{lookup} $$
+- Two Letter: Add letters at 3 positions and then check the dictionary = $$ 26 \times3 \times cost_{lookup} $$
+- Three Letter: Add letters at 4 positions and then check the dictionary = $$ 26 \times 4 \times cost_{lookup} $$
+- ...
+- Six Letters: Add letters at 7 positions and then check the dictionary = $$ 26 \times 7 \times cost_{lookup} $$
+
+Since we're doing this in sequence, the cost of these operations are multiplied. This yields something like $$ 26^7 \times 7! = 4.048032329 \times 10^{13} $$. Furthermore this is excluding the cost of looking up and the cost of inserting letters between words. This approach is computationally inefficient since the number of operations is in the order of trillions. 
 
 ### Analysis
 As we saw, the brute force approach is stupidly inefficient, so we need to come up with something better. We need to break the problem into various steps and see what we can do better at each stage.
@@ -59,12 +66,14 @@ Let's make a list of things we're doing:
 - Anagramming the word
 - Making a sequence out of these anagrammed words
 
+We tackle the concept of anagrams first in solving the problem.
+
 #### Anagrams
-Most of us know what anagram is, but for those who don't, let's look at the basic definition to see if that can help us come up with an efficient solution.
+Most of us know what anagram is already, but let's look at the basic definition to see if that can help us come up with an efficient solution.
 
 *Anagram: (n) a word, phrase, or name formed by rearranging the letters of another, such as spar, formed from rasp.*
 
-The above definition tells us that an anagram is a rearrangement of the letters of a word. That means that the anagram has the same number of letters (and also the same length) as the given word. This gives us the first piece of the puzzle -- how to check if a word is an anagram of another.
+The above definition tells us that an anagram is a rearrangement of the letters of a word. That means that the anagram has the same number of letters as the given word. This gives us the first piece of the puzzle -- how to check if a word is an anagram of another.
 
 The algorithm for this is as follows:
 - Count the number of occurences of each letter in word 1 and word 2
@@ -121,7 +130,7 @@ anagrams_of_wolf = [word for word in dictionary if are_anagrams(word, 'wolf')]
 With this, we've implemented an easy way to find anagrams of a given word. Now that we've dealt the "Anagram" portion of the problem, we can work on the "Add" part of it.
 
 #### Anagrams and Counters
-So far, we've seen how to check if words are anagrams of each other by checking if their counter values are the same. Let's describe the counters more concisely as $$ \{a: count_a, b:count_b, \ldots, z:count_z \} $$ except we show only the counts which are non-zero. The words *wolf* and *flow* are anagrams of each other and hence both have a counter $$ \text{\{f:1, l:1, o:1, w:1\}} $$. Now let's look at this in the reverse perspective. We can say that $$ \text{\{f:1, l:1, o:1, w:1\}} $$ acts as a common identity for the anagrams *wolf* and *flow*. So we can store all the anagrams of for a given counter in a dictionary as a form of preprocessing. This would make it easy when we need to go through all the possible anagrams in the counter. 
+So far, we've seen how to check if words are anagrams of each other by checking if their counter values are the same. Let's describe the counters more concisely as $$ \{a: count_a, b:count_b, \ldots, z:count_z \} $$ except we show only the counts which are non-zero. The words *wolf* and *flow* are anagrams of each other and hence both have a counter $$ \text{\{f:1, l:1, o:1, w:1\}} $$. Now let's look at this in the reverse perspective. We can say that $$ \text{\{f:1, l:1, o:1, w:1\}} $$ acts as a common identity for the anagrams *wolf* and *flow*. So we can store all the anagrams of for a given counter in a dictionary as a form of preprocessing. This would make it easy when we need to go through all the possible anagrams for a given counter. 
 
 Unfortunately, it introduces a new problem, namely the fact that lists cannot be used as the key to a dictionary. We need to come up with a representation that can be used as a key in a dictionary. Thankfully, in our problem we do not need to look for words longer than 10 to 12 letters. Furthermore, an actual word of that length cannot have more than 10 of the same letter. Even the ridiculously long [Pneumonoultramicroscopicsilicovolcanoconiosis](https://en.wikipedia.org/wiki/Pneumonoultramicroscopicsilicovolcanoconiosis) has 9 *o*s. So we can quite simply represent our counter as a 26 digit number, with each digit corresponding to the count of the letter. While this may not work/be easy in other languages, it's quite straightforward in Python. We can implement our new counter as follows:
 
@@ -154,9 +163,12 @@ def get_counter_anagram_map(word_list):
     return counter_anagram_map
 {% endhighlight %}
 
+I used the word list from the Official Scrabble Player's Dictionary or OSPD for short. This ensures that no proper nouns are included, which makes sense, since our addagram puzzle requires normal English words. 
+
+At this point, I'd like to discuss a few potential extensions for this problem. This problem can be extended to other languages too, however you will need to come up with your own mapping scheme since the technique I used above makes use of ASCII codes for English. Furthermore, I'll be using `alphabet` to represent the string `'abcdefghijklmnopqrstuvwxyz'` to iterate over, but you can replace it with your own alphabet as required, provided you create the appropriate counter. Therefore `w2c`, `add_letter` and `alphabet` are language dependent and should be implemented accordingly. The techniques used beyond this point are quite general and do not depend on a particular language.
 
 #### Adding letters
-The next thing that we're going to do is to generate anagrams after adding a letter. For example, take the word *low*. We can add the letter *f* to the word and search for anagrams for the new word by filtering from the dictionary as we did earlier. This would yield us words like *wolf* and *flow*. Similarly, we can add *s* to *low* and do the same filtering process to get words like *slow* and *lows*. However, adding a letter like *v* or *w* wouldn't yield any anagram words, so those letters can be ignored from consideration. So for a given word, we try out all the letters in the alphabet and find the letters, which added, yield anagrammed words. We then take one of those generated words, add a letter and anagram them and so on to get an addagram sequence. We can represent the logic as:
+The next thing that we're going to do is to generate anagrams after adding a letter. For example, take the counter $$ \text{\{l:1, o:1, w:1 \}} $$. We can add the letter *f* to the counter and check if the new counter produced has valid english words. If it does, we can then try to add letters to the counter $$ \text{\{f:1, l:1, o:1, w:1 \}} $$. However, adding a letter like *v* or *w* to our older wouldn't yield any anagram words, so we don't need to try to add letters to the counters produced in this case since it's obviously not going to form an addagram sequence. In short, for a given word, we try out all the letters in the alphabet and find the letters, which added, yield anagrammed words. We then take one of those generated words, add a letter and anagram them and so on to get an addagram sequence. We can represent the logic as:
 
 {% highlight python %}
 def letter_count(counter):
@@ -185,7 +197,9 @@ def find_addagrams(word, max_length, counter_anagram_map):
 {% endhighlight %}
 
 
-We should now be able to get a list of addagrams by supplying the starting word (such as 'as') to the find_addagrams function along with the other parameters. The a portion of the output for 9 letter words for *as* is as follows
+We should now be able to get a list of addagrams by supplying the starting word (such as 'as') to the `find_addagrams` function along with the other parameters -- `max_length` indicating the number of letterns in the longest word and `counter_anagram_map` which allows us to look up the anagrams for a given counter. 
+
+The block below shows portion of the output for addagram sequences for *as* with at most 9 letters: 
 ```
 [['as'], ['saw', 'was'], ['saws'], ['swats'], ['straws'], ['wasters'], ['stewards'], ['eastwards']]
 [['as'], ['saw', 'was'], ['saws'], ['swats'], ['straws'], ['wasters'], ['stewards'], ['westwards']]
@@ -205,7 +219,6 @@ We should now be able to get a list of addagrams by supplying the starting word 
 [['as'], ['saw', 'was'], ['swat'], ['sweat', 'waste'], ['rawest', 'waster', 'waters'], ['wreaths'], ['weathers', 'wreathes'], ['watershed']]
 [['as'], ['saw', 'was'], ['swat'], ['sweat', 'waste'], ['rawest', 'waster', 'waters'], ['waiters', 'wariest'], ['sweatier', 'weariest'], ['waterside']]
 [['as'], ['saw', 'was'], ['swat'], ['sweat', 'waste'], ['rawest', 'waster', 'waters'], ['waiters', 'wariest'], ['sweatier', 'weariest'], ['wateriest']]
-
 ```
 
 ## Conclusion(?)
@@ -219,7 +232,7 @@ We can do this optimization by building a *Trie* where each node corresponds to 
 
 We can visualize this in the diagram below
 
-![Diamond Graph]({{site.url}}/assets/addagram_graph.png)
+![Diamond Graph]({{site.baseurl}}/assets/addagram_graph.png)
 
 So, our job then is a matter of constructing a directed acylic graph from the words that we have. To start off, let us define our graph data structure.
 
@@ -284,7 +297,7 @@ def generate_addagram_graph(word_list):
     print("Saved to disk!")
 {% endhighlight %}
 
-Once the graph is built, we can perform the addagram sequence generation by performing DFS traversals on it using the DFS method with the specified arguments. Ideally, one would want to persist the graph on disk so that it can be reused whenever needed. This is precisely what's done in the gist.
+Once the graph is built, we can perform the addagram sequence generation by performing DFS traversals on it using the DFS method with the specified arguments. Ideally, one would want to persist the graph on disk so that it can be reused whenever needed. This is precisely what's done in the gist, which also includes a simple CLI for accepting dictionaries, words, maximum lengths and choosing whether to use the DAG version or the trial-and-error version of the addagram generator.
 
 ## Conclusion(!)
 The implementation I wrote builds the graph in less than 2 seconds. Furthermore, the DAG version of the generator runs twice as fast as the trial-and-error method in generating the same set of words! This proves that every thoughtful optimization makes a huge difference in performance. This was a very big learning experience in working with Python and problem solving in general. This also happens to be my first blog post as well, so I'll be happy if I can get pointers on improving my writing and presentation. If you want to ask any questions, feel free to send me a mail!
