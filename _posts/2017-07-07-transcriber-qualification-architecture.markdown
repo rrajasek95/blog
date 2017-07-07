@@ -3,6 +3,8 @@ title: Transcriber Qualification Architecture
 layout: post
 ---
 
+It's been a while since I updated on the progress of the project (3 weeks of undocumented work!), so I'll be covering what I've done in the past few weeks in this and upcoming posts. They will be divided based on the work that was done.
+
 # Organization
 The application is comprised of 4 basic entities
 - Users
@@ -24,4 +26,15 @@ The recordings collected from the previous task are then carried forward into th
 
 The data is continuously presented to the user until all prompts and recordings are exhausted. After this point, the user need not do anything until he is notified of more tasks to perform. As for Turkers, a separate transcription and recording process will be maintained since we are required to maintain a non-varying prompt and recording set for ensuring that the rewards are consistently provided to everyone who attempts the task. This will be handled through a separate HIT process in our Flask application.
 
-So, the architecture of the application is quite straightforward and simple. The data collected from this system will play a more important role in the upcoming weeks. I'll be reporting my application design progress and the data collection results in next week's post. So until then, stay tuned for more! 
+# Issues
+There are some primary issues that need to be dealt with in the above architecture:
+- Voicers and transcribers shouldn't be able to voice prompts or transcribe recordings that they've already completed.
+- Both should not be able to transcribe or voice data that is not presented to them.
+- Some basic validation of data must be done to prevent malicious users from injecting data
+
+The solutions for those include:
+- Checking for existence of voiced prompts or transcribed recordings before committing to the database
+- Having a hidden signature field (that validates whether the task has been assigned to the user by the server) that is checked on the server side.
+- Simple regular expressions that only allow a subset of symbols and basic requirement checks.
+
+The code for the application is hosted [here](https://github.com/rrajasek95/transcriber-qualification). The current status of data collection would be discussed in greater detail in upcoming posts, which will be posted quite soon. 
