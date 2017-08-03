@@ -18,8 +18,30 @@ layout: default
   <div class="post-content" itemprop="articleBody">
     {{ content }}
   </div>
-
+  <hr>
+  <table>
+  {% for post in site.posts %}
+    {% if post.title == page.title %}
+    <tr>
+      {% unless forloop.last %}
+        {% assign next = site.posts[forloop.index] %}
+      <td>
+        <h3>Previous Post</h3>
+        <a href="{{ site.baseurl }}{{ next.url }}">{{ next.title }} </a>
+      </td>
+      {% endunless %}
+      {% unless forloop.first %}
+      <td>
+        <h3>Next Post</h3>
+        <a href="{{ site.baseurl }}{{ prev.url }}">{{ prev.title }}</a>
+      </td>
+      {% endunless %}
+    </tr>
+    {% endif %}
+    {% assign prev = post %}
+  {% endfor %}
   {% if site.disqus.shortname %}
     {% include disqus_comments.html %}
   {% endif %}
+  </table>
 </article>
