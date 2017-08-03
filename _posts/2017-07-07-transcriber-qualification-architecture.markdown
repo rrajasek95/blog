@@ -1,6 +1,8 @@
 ---
-title: Transcriber Qualification Architecture
+title: CMUSphinx GSoC 2017 - Transcriber Qualification Architecture
 layout: post
+comments: true
+categories: gsoc
 ---
 
 It's been a while since I updated on the progress of the project (3 weeks of undocumented work!), so I'll be covering what I've done in the past few weeks in this and upcoming posts. They will be divided based on the work that was done.

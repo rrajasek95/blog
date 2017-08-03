@@ -2,6 +2,7 @@
 title: CMUSphinx GSOC 2017 - Data Processing
 layout: post
 comments: true
+categories: gsoc
 ---
 
 # Prelude: A Confession and a Promise
